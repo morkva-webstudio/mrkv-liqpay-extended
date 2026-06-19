@@ -1,9 +1,9 @@
-=== Morkva Liqpay Extended ===
+=== morkva Liqpay Extended ===
 Contributors: bandido, dpmine
-Plugin Name: Morkva Liqpay Extended
+Plugin Name: morkva Liqpay Extended
 Tags: LiqPay, Ликпей, Лікпей
-Tested up to: 6.9
-Stable tag: 0.8.6
+Tested up to: 7.0
+Stable tag: 1.0.3
 WC tested up to: 9.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -33,6 +33,34 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 
 Потрібна підтримка чи додатковий функціонал? support@morkva.co.ua
+
+= 1.0.3 =
+* [new] додали запис статуса оплати у мета
+
+= 1.0.2 =
+* [new] додали збереження логу запитів та callback від LiqPay
+* [new] додали скасування холду при зміні статусу
+
+= 1.0.1 =
+* WP 7.0 - сумісний
+
+= 1.0.0 =
+* [new] додали налаштування "призначення платежу"
+
+= 0.9.2 =
+* [new] розширили тестовий режим "Тільки для адмінів" 
+
+= 0.9.1 =
+* [ui] зміни в налаштуваннях
+
+= 0.9.0 =
+* [ui] зміни в інтерфейсі
+
+= 0.8.8 =
+* [new] додали підтримку статусу Платіж на перевірці
+
+= 0.8.7 =
+* [fix] змінили метод отримання замовлення по номеру
 
 = 0.8.6 =
 * [new] додали підтримку програми "Національний кешбек"
