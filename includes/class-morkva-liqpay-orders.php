@@ -38,12 +38,22 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 		}
 
 		public function mrkv_liqpay_clean_logs() {
-			$handler = new WC_Log_Handler_File();
+			$log_dir = defined( 'WC_LOG_DIR' ) ? WC_LOG_DIR : WP_CONTENT_DIR . '/uploads/wc-logs/';
 			$source  = 'mrkv-liqpay-extended';
-			$log_path = $handler->get_log_file_path( $source );
+			$files = glob( $log_dir . $source . '*.log' );
 
-			if ( file_exists( $log_path ) ) {
-				file_put_contents( $log_path, '' );
+			if ( ! empty( $files ) && is_array( $files ) ) {
+				$three_days_ago = time() - ( 3 * DAY_IN_SECONDS ); 
+
+				foreach ( $files as $file ) {
+					if ( file_exists( $file ) ) {
+						$file_modified_time = filemtime( $file );
+
+						if ( $file_modified_time < $three_days_ago ) {
+							@unlink( $file );
+						}
+					}
+				}
 			}
 		}
 
