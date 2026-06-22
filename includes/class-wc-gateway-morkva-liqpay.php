@@ -615,15 +615,21 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
 
             # Parse JSON data
             $parsed_data = json_decode(base64_decode($data)); 
+
+            $log_message = "--- Liqpay Callback Parsed ---\n";
+            $log_message .= "Body: " . wp_json_encode($parsed_data, JSON_UNESCAPED_UNICODE) . "\n";
+            $log_message .= "------------------------";
+
+            $logger->debug( $log_message, $context );
             
             # Save main data response
-            $received_public_key = $parsed_data->public_key ?? null;
-            $liqpay_order_id     = $parsed_data->order_id ?? null;
-            $status              = $parsed_data->status ?? null; 
-            $sender_phone        = $parsed_data->sender_phone ?? null;
-            $amount              = $parsed_data->amount ?? null;
-            $currency            = $parsed_data->currency ?? null;
-            $transaction_id      = $parsed_data->transaction_id ?? null;
+            $received_public_key = $parsed_data->public_key ?? '';
+            $order_id     = $parsed_data->order_id ?? '';
+            $status              = $parsed_data->status ?? ''; 
+            $sender_phone        = $parsed_data->sender_phone ?? '';
+            $amount              = $parsed_data->amount ?? '';
+            $currency            = $parsed_data->currency ?? '';
+            $transaction_id      = $parsed_data->transaction_id ?? '';
 
             # Get order data
             $order = wc_get_order($order_id);

@@ -228,7 +228,13 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 	            $screen = 'shop_order';
 	        }
 
-	        $order_id = $post->ID;
+	        if ( $post instanceof \WP_Post ) {
+                $order_id = $post->ID;
+            } elseif ( $post instanceof \WC_Order ) {
+                $order_id = $post->get_id();
+            } else {
+                $order_id = false;
+            }
 
 	        # Check order id
 	    	if ($order_id) 
@@ -253,7 +259,14 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 
 	    public function mrkv_liqpay_add_plugin_meta_box($post)
 	    {
-	    	$order_id = $post->ID;
+	    	if ( $post instanceof \WP_Post ) {
+                $order_id = $post->ID;
+            } elseif ( $post instanceof \WC_Order ) {
+                $order_id = $post->get_id();
+            } else {
+                $order_id = false;
+            }
+
 	    	# Check order id
 	    	if ($order_id) 
 	    	{
