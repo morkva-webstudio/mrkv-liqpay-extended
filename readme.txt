@@ -3,7 +3,7 @@ Contributors: bandido, dpmine
 Plugin Name: morkva Liqpay Extended
 Tags: LiqPay, Ликпей, Лікпей
 Tested up to: 7.1
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 WC tested up to: 9.8.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -33,6 +33,11 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 
 Потрібна підтримка чи додатковий функціонал? support@morkva.co.ua
+
+= 1.0.8 =
+* [fix] callback від LiqPay тепер криптографічно перевіряється (hash_equals підпису) — раніше платіж можна було підтвердити підробленим запитом зі справжнім публічним ключем
+* [fix] додали звірку суми та валюти платежу із замовленням
+* [fix] проміжні статуси LiqPay більше не переводять замовлення у «Не вдалося»
 
 = 1.0.7 =
 * [new] додали функціонал скасування платежу
