@@ -573,6 +573,64 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
     }
 
     /**
+     * Verify LiqPay callback signature
+     *
+     * LiqPay signs callbacks as base64(sha1(private_key + data + private_key)).
+     * The key pair is selected by the public_key sent in the payload, because
+     * get_keys_access() branches on current_user_can() and there is no user
+     * in a server-to-server callback context.
+     *
+     * @param string $data Raw base64 payload as received
+     * @param string $received_signature Signature from the request
+     * @param string $received_public_key Public key from the decoded payload
+     * @return bool
+     */
+    protected function mrkv_liqpay_verify_signature($data, $received_signature, $received_public_key)
+    {
+        # public_key comes from attacker-controlled JSON, force it to a string
+        if (!is_scalar($received_public_key))
+        {
+            return false;
+        }
+
+        $data                = (string) $data;
+        $received_signature  = (string) $received_signature;
+        $received_public_key = (string) $received_public_key;
+
+        if ($data === '' || $received_signature === '' || $received_public_key === '')
+        {
+            return false;
+        }
+
+        # Map payload public_key to the matching private key (live or sandbox)
+        $pairs = array(
+            $this->get_option('public_key')      => $this->get_option('private_key'),
+            $this->get_option('test_public_key') => $this->get_option('test_private_key'),
+        );
+
+        $private_key = '';
+
+        foreach ($pairs as $public => $private)
+        {
+            if ($public !== '' && $private !== '' && hash_equals((string) $public, $received_public_key))
+            {
+                $private_key = (string) $private;
+                break;
+            }
+        }
+
+        if ($private_key === '')
+        {
+            return false;
+        }
+
+        # Expected signature for the received payload
+        $expected = base64_encode(sha1($private_key . $data . $private_key, true));
+
+        return hash_equals($expected, $received_signature);
+    }
+
+    /**
      * Check response from LiqPay
      * 
      * @param $inputData All data
@@ -631,6 +689,18 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
             $currency            = $parsed_data->currency ?? '';
             $transaction_id      = $parsed_data->transaction_id ?? '';
 
+            # Verify callback authenticity before touching the order
+            if(!$this->mrkv_liqpay_verify_signature($data, $received_signature, $received_public_key))
+            {
+                $logger->error(
+                    'Liqpay callback rejected: invalid signature (order_id: ' . $order_id . ')',
+                    $context
+                );
+
+                status_header(400);
+                exit;
+            }
+
             # Get order data
             $order = wc_get_order($order_id);
 
@@ -656,6 +726,28 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
             {
                 if(!$order->has_status('processing'))
                 {
+                    $order_total    = (float) $order->get_total();
+                    $paid_amount    = (float) $amount;
+                    $order_currency = $order->get_currency();
+
+                    # Signature proves the sender, this proves the amount
+                    if(abs($paid_amount - $order_total) > 0.01 || ($currency !== '' && $currency !== $order_currency))
+                    {
+                        $logger->error(
+                            'Liqpay callback amount mismatch (order ' . $order_id . '): expected '
+                            . $order_total . ' ' . $order_currency . ', got ' . $paid_amount . ' ' . $currency,
+                            $context
+                        );
+
+                        $order->update_status(
+                            'on-hold',
+                            __('LiqPay: payment amount or currency does not match the order. Manual check required.', 'mrkv-liqpay-extended')
+                        );
+                        $order->save();
+
+                        exit;
+                    }
+
                     $message = '';
 
                     if(isset($parsed_data) && isset($parsed_data->sender_card_mask2) && !$order->get_meta('_mrkv_liqpay_sender_card_mask2'))
@@ -794,8 +886,25 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
             } 
             else 
             {
-                # Update status to failed
-                $order->update_status('failed', __('Error during payment', 'mrkv-liqpay-extended'));
+                # Only real failures may fail the order, LiqPay also sends intermediate statuses
+                $failure_statuses = array('failure', 'error', 'reversed', 'expired');
+
+                if(in_array($status, $failure_statuses, true) && !$order->is_paid())
+                {
+                    # Update status to failed
+                    $order->update_status(
+                        'failed',
+                        // translators: %s: LiqPay transaction status
+                        sprintf(__('LiqPay: payment failed (status: %s)', 'mrkv-liqpay-extended'), $status)
+                    );
+                }
+                else
+                {
+                    $order->add_order_note(
+                        // translators: %s: LiqPay transaction status
+                        sprintf(__('LiqPay intermediate status: %s', 'mrkv-liqpay-extended'), $status)
+                    );
+                }
 
                 # Stop server work
                 exit;
