@@ -573,6 +573,49 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
     }
 
     /**
+     * Verify LiqPay callback signature
+     *
+     * @param string $data Raw base64 payload as received
+     * @param string $received_signature Signature from the request
+     * @param string $received_public_key Public key from the decoded payload
+     * @return bool
+     */
+    protected function mrkv_liqpay_verify_signature($data, $received_signature, $received_public_key)
+    {
+        if (!is_scalar($received_public_key))
+        {
+            return false;
+        }
+
+        $data                = (string) $data;
+        $received_signature  = (string) $received_signature;
+        $received_public_key = (string) $received_public_key;
+
+        if ($data === '' || $received_signature === '' || $received_public_key === '')
+        {
+            return false;
+        }
+
+        $pairs = array(
+            $this->get_option('public_key')      => $this->get_option('private_key'),
+            $this->get_option('test_public_key') => $this->get_option('test_private_key'),
+        );
+
+        $private_key = '';
+
+        foreach ($pairs as $public => $private)
+        {
+            if ($public !== '' && $private !== '' && hash_equals((string) $public, $received_public_key))
+            {
+                $private_key = (string) $private;
+                break;
+            }
+        }
+
+        return ($private_key === '') ? false : true;
+    }
+
+    /**
      * Check response from LiqPay
      * 
      * @param $inputData All data
@@ -607,6 +650,7 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
                 // phpcs:disable WordPress.Security.NonceVerification.Missing 
                 $data = sanitize_text_field(wp_unslash($_POST['data']));
             }
+
             // phpcs:disable WordPress.Security.NonceVerification.Missing 
             if(isset($_POST['signature'])){
                 // phpcs:disable WordPress.Security.NonceVerification.Missing 
@@ -626,10 +670,17 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
             $received_public_key = $parsed_data->public_key ?? '';
             $order_id     = $parsed_data->order_id ?? '';
             $status              = $parsed_data->status ?? ''; 
-            $sender_phone        = $parsed_data->sender_phone ?? '';
-            $amount              = $parsed_data->amount ?? '';
-            $currency            = $parsed_data->currency ?? '';
-            $transaction_id      = $parsed_data->transaction_id ?? '';
+
+            if(!$this->mrkv_liqpay_verify_signature($data, $received_signature, $received_public_key))
+            {
+                $logger->error(
+                    'Liqpay callback rejected: invalid signature (order_id: ' . $order_id . ')',
+                    $context
+                );
+
+                status_header(400);
+                exit;
+            }
 
             # Get order data
             $order = wc_get_order($order_id);
@@ -794,8 +845,16 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
             } 
             else 
             {
-                # Update status to failed
-                $order->update_status('failed', __('Error during payment', 'mrkv-liqpay-extended'));
+                $failure_statuses = array('failure', 'error', 'reversed', 'expired');
+
+                if(in_array($status, $failure_statuses, true) && !$order->is_paid())
+                {
+                    $order->update_status(
+                        'failed',
+                        // translators: %s: LiqPay transaction status
+                        sprintf(__('LiqPay: payment failed (status: %s)', 'mrkv-liqpay-extended'), $status)
+                    );
+                }
 
                 # Stop server work
                 exit;
