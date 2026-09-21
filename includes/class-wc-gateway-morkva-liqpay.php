@@ -573,6 +573,54 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
     }
 
     /**
+     * Refund through LiqPay (WooCommerce calls it from the order refund form)
+     *
+     * @param int $order_id Order ID
+     * @param float|null $amount Refund amount
+     * @param string $reason Refund reason
+     * @return bool|WP_Error
+     */
+    public function process_refund($order_id, $amount = null, $reason = '')
+    {
+        $amount = (float) $amount;
+
+        if($amount <= 0)
+        {
+            return new WP_Error('mrkv_liqpay_refund', __('Refund amount must be greater than zero.', 'mrkv-liqpay-extended'));
+        }
+
+        # Include Api Morkva liqpay
+        require_once(__DIR__ . '/classes/MorkvaLiqPay.php');
+
+        $keys_access = $this->get_keys_access();
+
+        try
+        {
+            $morkva_liqPay = new MorkvaLiqPay($keys_access['public_key'], $keys_access['private_key']);
+        }
+        catch(InvalidArgumentException $e)
+        {
+            return new WP_Error('mrkv_liqpay_refund', $e->getMessage());
+        }
+
+        $result = $morkva_liqPay->refund($order_id, $amount);
+
+        wc_get_logger()->debug(
+            "--- Liqpay Refund ---\nOrder: " . $order_id . "\nAmount: " . $amount . "\nAnswer: " . wp_json_encode($result, JSON_UNESCAPED_UNICODE),
+            array( 'source' => 'mrkv-liqpay-extended' )
+        );
+
+        if(isset($result['error']))
+        {
+            $error = is_scalar($result['error']) ? (string) $result['error'] : wp_json_encode($result['error'], JSON_UNESCAPED_UNICODE);
+
+            return new WP_Error('mrkv_liqpay_refund', $error);
+        }
+
+        return true;
+    }
+
+    /**
      * Verify LiqPay callback signature
      *
      * @param string $data Raw base64 payload as received
