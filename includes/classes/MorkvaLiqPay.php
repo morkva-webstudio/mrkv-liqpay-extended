@@ -280,48 +280,56 @@ class MorkvaLiqPay
         return $signature;
     }
 
+    /**
+     * Cancel a hold (LiqPay releases it with the refund action)
+     *
+     * @param int|string $order_id Order id sent to LiqPay
+     * @param float|string $amount Amount
+     * @return array LiqPay answer, or array with the key "error" if the request failed
+     */
     public function mrkv_liqpay_hold_cancel($order_id, $amount)
     {
-        $url = 'https://www.liqpay.ua/api/request';
-
-        $data_array = array(
-            'action'     => 'refund',
-            'version'    => 3,
-            'public_key' => $this->_public_key,
-            'order_id'   => $order_id,
-            'amount'     => $amount
-        );
-
-        $json_data = json_encode($data_array);
-        $data = base64_encode($json_data);
-
-        # Create the signature
-        $signature_str = $this->_private_key . $data . $this->_private_key;
-        $signature = base64_encode(sha1($signature_str, true));
-
-        # Prepare POST fields
-        $post_fields = http_build_query(array(
-            'data' => $data,
-            'signature' => $signature
-        ));
-
-        # Make the POST request using WordPress HTTP API
-        $response = wp_remote_post($url, array(
-            'method'    => 'POST',
-            'body'      => $post_fields,
-            'headers'   => array(
-                'Content-Type' => 'application/x-www-form-urlencoded',
-            ),
-            'timeout'   => 30
-        ));
+        return $this->refund($order_id, $amount);
     }
 
+    /**
+     * Refund a payment or a part of it
+     *
+     * @param int|string $order_id Order id sent to LiqPay
+     * @param float|string $amount Amount
+     * @return array LiqPay answer, or array with the key "error" if the request failed
+     */
+    public function refund($order_id, $amount)
+    {
+        return $this->api_request('refund', $order_id, $amount);
+    }
+
+    /**
+     * Finalize a hold
+     *
+     * @param int|string $order_id Order id sent to LiqPay
+     * @param float|string $amount Amount
+     * @return array LiqPay answer, or array with the key "error" if the request failed
+     */
     public function mrkv_liqpay_hold_final($order_id, $amount)
+    {
+        return $this->api_request('hold_completion', $order_id, $amount);
+    }
+
+    /**
+     * Send a signed request to the LiqPay API
+     *
+     * @param string $action LiqPay action
+     * @param int|string $order_id Order id sent to LiqPay
+     * @param float|string $amount Amount
+     * @return array LiqPay answer, or array with the key "error" if the request failed
+     */
+    private function api_request($action, $order_id, $amount)
     {
         $url = 'https://www.liqpay.ua/api/request';
 
         $data_array = array(
-            'action'     => 'hold_completion',
+            'action'     => $action,
             'version'    => 3,
             'public_key' => $this->_public_key,
             'order_id'   => $order_id,
@@ -358,8 +366,22 @@ class MorkvaLiqPay
             );
         }
 
-        $body = wp_remote_retrieve_body($response);
-        $decoded = json_decode($body, true);
+        $decoded = json_decode(wp_remote_retrieve_body($response), true);
+
+        if (!is_array($decoded)) {
+            return array(
+                'success' => false,
+                'error'   => 'Invalid response from LiqPay'
+            );
+        }
+
+        # LiqPay answers errors with HTTP 200 and result = error
+        if (isset($decoded['result']) && $decoded['result'] === 'error') {
+            return array(
+                'success' => false,
+                'error'   => !empty($decoded['err_description']) ? $decoded['err_description'] : (isset($decoded['err_code']) ? $decoded['err_code'] : 'LiqPay error')
+            );
+        }
 
         return $decoded;
     }

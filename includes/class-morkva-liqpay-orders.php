@@ -77,9 +77,9 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 					$hold_cancel_status = $liqpay_payment_gateway->get_mrkv_liqpay_hold_cancel_status();
 					$is_cancelled_hold = false;
 
-	    			if($status_hold)
+	    			if($hold_cancel_status)
 	    			{
-	    				if ($new_status == $status_hold) 
+	    				if ($new_status == $hold_cancel_status) 
 	    				{
 					        $is_cancelled_hold = true;
 					    }
@@ -96,9 +96,16 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 
 						$mrkv_liqpay_payment = new MorkvaLiqPay($mrkv_liqpay_token['public_key'], $mrkv_liqpay_token['private_key']);
 
-						$mrkv_liqpay_payment->mrkv_liqpay_hold_cancel($order_id, $order->get_total());
+						$result = $mrkv_liqpay_payment->mrkv_liqpay_hold_cancel($order_id, $order->get_total());
 
-						$order->add_order_note(__('Hold canceled', 'mrkv-liqpay-extended'));
+						if(isset($result['error']))
+						{
+							$order->add_order_note('Error: ' . wp_json_encode($result['error'], JSON_UNESCAPED_UNICODE));
+						}
+						else
+						{
+							$order->add_order_note(__('Hold canceled', 'mrkv-liqpay-extended'));
+						}
 					}
 				}
 			}
@@ -371,9 +378,16 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 
 		    		$mrkv_liqpay_payment = new MorkvaLiqPay($mrkv_liqpay_token['public_key'], $mrkv_liqpay_token['private_key']);
 
-		    		$mrkv_liqpay_payment->mrkv_liqpay_hold_cancel($order_id, $order->get_total());
+		    		$result = $mrkv_liqpay_payment->mrkv_liqpay_hold_cancel($order_id, $order->get_total());
 
-		    		$order->add_order_note(__('Hold canceled', 'mrkv-liqpay-extended'));
+		    		if(isset($result['error']))
+		    		{
+		    			$order->add_order_note('Error: ' . wp_json_encode($result['error'], JSON_UNESCAPED_UNICODE));
+		    		}
+		    		else
+		    		{
+		    			$order->add_order_note(__('Hold canceled', 'mrkv-liqpay-extended'));
+		    		}
 		        }
 	        }
 
