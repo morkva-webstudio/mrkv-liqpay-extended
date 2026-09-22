@@ -651,16 +651,21 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
 
         $private_key = '';
 
-        foreach ($pairs as $public => $private)
+        foreach ($pairs as $public => $private) 
         {
-            if ($public !== '' && $private !== '' && hash_equals((string) $public, $received_public_key))
-            {
+            if ($public !== '' && $private !== '' && hash_equals((string) $public, $received_public_key)) {
                 $private_key = (string) $private;
                 break;
             }
         }
 
-        return ($private_key === '') ? false : true;
+        if ($private_key === '') 
+        {
+            return false;
+        }
+
+        $expected = base64_encode(sha1($private_key . $data . $private_key, true));
+        return hash_equals($expected, $received_signature);
     }
 
     /**
@@ -901,6 +906,13 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
                         'failed',
                         // translators: %s: LiqPay transaction status
                         sprintf(__('LiqPay: payment failed (status: %s)', 'mrkv-liqpay-extended'), $status)
+                    );
+                }
+                else
+                {
+                    $order->add_order_note(
+                        // translators: %s: LiqPay transaction status
+                        sprintf(__('LiqPay intermediate status: %s', 'mrkv-liqpay-extended'), $status)
                     );
                 }
 
