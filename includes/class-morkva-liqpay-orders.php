@@ -124,9 +124,9 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 							<img src="<?php echo esc_url(plugins_url( '../img/star.svg', __FILE__ )); ?>" alt="Star" alt="Star">
 							<img src="<?php echo esc_url(plugins_url( '../img/star.svg', __FILE__ )); ?>" alt="Star" alt="Star">
 							<img src="<?php echo esc_url(plugins_url( '../img/star.svg', __FILE__ )); ?>" alt="Star" alt="Star">
-							<?php echo esc_html__( 'review at', 'mrkv-liqpay-extended' ); ?> <a href="https://wordpress.org/plugins/mrkv-liqpay-extended/" target="blanc">WordPress.org</a>
+							<?php echo esc_html__( 'review at', 'mrkv-liqpay-extended' ); ?> <a href="https://wordpress.org/plugins/mrkv-liqpay-extended/" target="_blank">WordPress.org</a>
 						</p>
-						<a class="button button-primary" href="https://wordpress.org/plugins/mrkv-liqpay-extended/" target="blanc">
+						<a class="button button-primary" href="https://wordpress.org/plugins/mrkv-liqpay-extended/" target="_blank">
 							<?php echo esc_html__( 'Leave', 'mrkv-liqpay-extended' ) . ' '; ?>
 							<img src="<?php echo esc_url(plugins_url( '../img/star.svg', __FILE__ )); ?>" alt="Star" alt="Star">
 							<img src="<?php echo esc_url(plugins_url( '../img/star.svg', __FILE__ )); ?>" alt="Star" alt="Star">
@@ -137,13 +137,13 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 						<p>
 							<?php echo esc_html__( 'Isn’t good enough for a 5', 'mrkv-liqpay-extended' ); ?> 
 							<img src="<?php echo esc_url(plugins_url( '../img/star.svg', __FILE__ )); ?>" alt="Star" alt="Star">? 
-							<?php echo esc_html__( 'Contact us via the widget on our website, or check out', 'mrkv-liqpay-extended' ); ?> <a href="https://docs.morkva.co.ua/uk?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="blanc"> <?php echo esc_html__( 'documantation', 'mrkv-liqpay-extended' ); ?></a>
+							<?php echo esc_html__( 'Contact us via the widget on our website, or check out', 'mrkv-liqpay-extended' ); ?> <a href="https://docs.morkva.co.ua/uk?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="_blank"> <?php echo esc_html__( 'documantation', 'mrkv-liqpay-extended' ); ?></a>
 						</p>
 						<div class="mrkv-btns-line-sidebar" style="display: flex;gap: 4px;">
-							<a class="button button-primary" href="https://morkva.co.ua/?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="blanc">
+							<a class="button button-primary" href="https://morkva.co.ua/?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="_blank">
 								<?php echo esc_html__( 'Go to the website', 'mrkv-liqpay-extended' ); ?>
 							</a>
-							<a class="button" href="https://docs.morkva.co.ua/uk?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="blanc">
+							<a class="button" href="https://docs.morkva.co.ua/uk?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="_blank">
 								<?php echo esc_html__( 'Documantation', 'mrkv-liqpay-extended' ); ?>
 							</a>
 						</div>
@@ -165,7 +165,7 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 							</li>
 							<li><?php echo esc_html__( 'and more', 'mrkv-liqpay-extended' ); ?></li>
 						</ul>
-						<a class="button button-primary" href="https://morkva.co.ua/shop/woocommerce-liqpay-extended-pro/?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="blanc">
+						<a class="button button-primary" href="https://morkva.co.ua/shop/woocommerce-liqpay-extended-pro/?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="_blank">
 							<?php echo esc_html__( 'Buy Pro-version', 'mrkv-liqpay-extended' ); ?>
 						</a>
 					</div>
@@ -173,29 +173,48 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 						<h3 style="margin-top: 0;"><?php echo esc_html__( 'Other free plugins', 'mrkv-liqpay-extended' ); ?></h3>
 						<p><?php echo esc_html__( 'All our plugins are cross-compatible', 'mrkv-liqpay-extended' ); ?></p>
 						<?php
-							$response = wp_remote_get( 'https://morkva.co.ua/wp-json/pluginManagement/v2', array(
-								'headers' => array(
-								),
-								'timeout' => 30,
-								'redirection' => 5,
-								'httpversion' => '1.1',
-								'sslverify' => true
-							));
+							$mrkv_liqpay_transient_key = 'morkva_plugin_management_data';
+							$mrkv_liqpay_cached_data = get_transient( $mrkv_liqpay_transient_key );
+							if ( false !== $mrkv_liqpay_cached_data ) {
+								$mrkv_liqpay_data = ( 'error' === $mrkv_liqpay_cached_data ) ? false : $mrkv_liqpay_cached_data;
+							} else {
+								
+								$mrkv_liqpay_response = wp_remote_get( 'https://morkva.co.ua/wp-json/pluginManagementPro/v2', array(
+									'headers'     => array(),
+									'timeout'     => 6,
+									'redirection' => 5,
+									'httpversion' => '1.1',
+									'sslverify'   => true,
+								) );
 
-							$mrkv_mono_response_data = $response['body'] ? json_decode( $response['body'], true ) : null;
-							$mrkv_mono_plugins = $mrkv_mono_response_data['plugins'] ?? [];
+								if ( is_wp_error( $mrkv_liqpay_response ) || 200 !== wp_remote_retrieve_response_code( $mrkv_liqpay_response ) ) {
+									set_transient( $mrkv_liqpay_transient_key, 'error', HOUR_IN_SECONDS );
+									$mrkv_liqpay_data = false;
+								} else {
+									$mrkv_liqpay_body = wp_remote_retrieve_body( $mrkv_liqpay_response );
+									$mrkv_liqpay_data = json_decode( $mrkv_liqpay_body, true );
 
-							if(!empty($mrkv_mono_plugins))
-							{
+									if ( empty( $mrkv_liqpay_data ) || ! is_array( $mrkv_liqpay_data ) ) {
+										set_transient( $mrkv_liqpay_transient_key, 'error', HOUR_IN_SECONDS );
+										$mrkv_liqpay_data = false;
+									} else {
+										set_transient( $mrkv_liqpay_transient_key, $mrkv_liqpay_data, 12 * HOUR_IN_SECONDS );
+									}
+								}
+							}
+
+							$mrkv_liqpay_plugins = ( is_array( $mrkv_liqpay_data ) && isset( $mrkv_liqpay_data['plugins'] ) ) ? $mrkv_liqpay_data['plugins'] : [];
+
+							if ( ! empty( $mrkv_liqpay_plugins ) ) {
 								?>
 									<ul style="list-style: disc;padding-left: 17px;">
 										<?php
-											foreach($mrkv_mono_plugins as $plugin_slug => $plugin_data)
+											foreach($mrkv_liqpay_plugins as $plugin_slug => $plugin_data)
 											{
 												if($plugin_slug == 'mrkv-liqpay-extended'){ continue; }
 												?>
 													<li>
-														<a style="margin-bottom:5px;" href="<?php echo esc_attr($plugin_data['url'] ?? ''); ?>?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="blanc" class="plugin_line"><?php echo esc_attr($plugin_data['label'] ?? ''); ?></a>
+														<a style="margin-bottom:5px;" href="<?php echo esc_attr($plugin_data['url'] ?? ''); ?>?utm_source=plugin&utm_medium=sidebar&utm_campaign=liqpay_free" target="_blank" class="plugin_line"><?php echo esc_attr($plugin_data['label'] ?? ''); ?></a>
 														<span>- 
 														<?php 
 															$current_desc = (strpos(get_user_locale(), 'uk') === 0) 
