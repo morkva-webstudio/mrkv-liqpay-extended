@@ -461,7 +461,7 @@ class WC_Gateway_Morkva_Liqpay extends WC_Payment_Gateway
             'description' => $this->getDescription($order->get_id()),
             'order_id' => $order->get_id(),
             'result_url' => $this->get_return_url($order),
-            'language' => 'uk',
+            'language' => MorkvaLiqPay::mrkv_liqpay_get_language($order),
             'server_url' => WC()->api_request_url( 'wc_gateway_morkva_liqpay' )
         );
 
