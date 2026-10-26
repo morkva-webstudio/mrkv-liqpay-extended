@@ -62,6 +62,10 @@ msgstr "API public_key"
 msgid "authcode_debit:  "
 msgstr "authcode_debit:  "
 
+#: includes/class-wc-gateway-morkva-liqpay.php:204
+msgid "Automatic cancellation of holding when the order status changes"
+msgstr "Automatic cancellation of holding when the order status changes"
+
 #: includes/class-morkva-liqpay-orders.php:85
 msgid "Buy Pro-version"
 msgstr "Buy Pro-version"
