@@ -123,6 +123,55 @@ class MorkvaLiqPay
     }
 
     /**
+     * Language of the LiqPay payment page for the current visitor
+     *
+     * Takes the visitor's language from WPML, Polylang or TranslatePress:
+     * Ukrainian and Russian give "uk", any other language gives "en".
+     * Without these plugins the page stays Ukrainian.
+     *
+     * @param WC_Order|null $order Order being paid
+     * @return string "uk" or "en"
+     */
+    public static function mrkv_liqpay_get_language($order = null)
+    {
+        # Locale of the current visitor from the multilingual plugin
+        $locale = '';
+
+        if (function_exists('pll_current_language'))
+        {
+            # Polylang (checked first: it also answers WPML's filters, with its slug "ua" instead of a locale)
+            $locale = pll_current_language('locale');
+        }
+        else
+        {
+            # WPML language code; other plugins may hook this filter and answer null
+            $code = apply_filters('wpml_current_language', null);
+
+            if (is_string($code) && '' !== $code)
+            {
+                # WPML: locale of the code (codes can be renamed, locales cannot)
+                $languages = apply_filters('wpml_active_languages', null);
+                $locale = isset($languages[$code]['default_locale']) ? $languages[$code]['default_locale'] : $code;
+            }
+            elseif (!empty($GLOBALS['TRP_LANGUAGE']))
+            {
+                # TranslatePress: current language is a locale
+                $locale = $GLOBALS['TRP_LANGUAGE'];
+            }
+        }
+
+        # No multilingual plugin or language unknown: Ukrainian, as before
+        $language = 'uk';
+
+        if (is_string($locale) && '' !== $locale)
+        {
+            $language = in_array(strtolower(substr($locale, 0, 2)), array('uk', 'ru'), true) ? 'uk' : 'en';
+        }
+
+        return apply_filters('mrkv_liqpay_language', $language, $order);
+    }
+
+    /**
      * Create link for request
      *
      * @param array $params
@@ -133,9 +182,6 @@ class MorkvaLiqPay
      */
     public function cnb_link($params)
     {
-        # Save language code
-        $language = 'uk';
-
         # Combine all parameters
         $params    = $this->cnb_params($params);
         # Encode all parameters
