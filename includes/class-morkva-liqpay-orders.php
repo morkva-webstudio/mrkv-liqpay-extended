@@ -244,6 +244,12 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 	     */
 	    public function mrkv_liqpay_add_meta_boxes($post_type, $post)
 	    {
+	    	# Runs on every post edit screen, also when WooCommerce is missing
+	    	if ( ! function_exists( 'wc_get_order' ) )
+	    	{
+	    		return;
+	    	}
+
 	    	# Check hpos
 	        if(class_exists( CustomOrdersTableController::class )){
 	            $screen = wc_get_container()->get( CustomOrdersTableController::class )->custom_orders_table_usage_is_enabled()

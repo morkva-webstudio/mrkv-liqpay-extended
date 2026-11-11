@@ -2,7 +2,7 @@
 /*
  * Plugin Name:morkva Liqpay Extended
  * Description: LiqPay Payment Gateway with callback by morkva
- * Version: 1.0.11
+ * Version: 1.1.0
  * Tested up to: 7.1
  * Requires at least: 5.2
  * Requires PHP: 7.1
@@ -32,7 +32,7 @@ add_action( 'before_woocommerce_init', function() {
 
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-define ( 'LIQPAY_VERSION', '1.0.11' );
+define ( 'LIQPAY_VERSION', '1.1.0' );
 define( 'LIQPAY_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LIQPAY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'LIQPAY_PLUGIN_FILE_NAME', basename( __FILE__ ) );
@@ -79,7 +79,7 @@ function mrkv_liqpay_styles_and_scripts()
 
 function mrkv_liqpay_styles_and_scripts_front()
 {
-    if ( is_checkout() ) 
+    if ( function_exists( 'is_checkout' ) && is_checkout() ) 
     {
         wp_enqueue_style('front-mrkv-liqpay', LIQPAY_PLUGIN_URL . '/css/morkva-liqpay-front.css', array(), LIQPAY_VERSION);
     }
@@ -113,6 +113,12 @@ function mrkv_liqpay_true_load_plugin_textdomain()
  * */
 function mrkv_liqpay_extended_init_gateway_class()
 {
+    # WooCommerce is inactive or failed to load: the gateway class cannot be declared
+    if ( ! class_exists( 'WC_Payment_Gateway' ) )
+    {
+        return;
+    }
+
     # Iclude Morkva Liqpay Gateway
     require_once(__DIR__ . '/includes/class-wc-gateway-morkva-liqpay.php');
 }
