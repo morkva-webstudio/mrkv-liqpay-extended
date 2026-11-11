@@ -2,7 +2,7 @@
 /*
  * Plugin Name:morkva Liqpay Extended
  * Description: LiqPay Payment Gateway with callback by morkva
- * Version: 1.0.11
+ * Version: 1.0.12
  * Tested up to: 7.1
  * Requires at least: 5.2
  * Requires PHP: 7.1
@@ -12,6 +12,7 @@
  * WC requires at least: 5.4.0
  * WC tested up to: 9.8.0
  * Domain Path: /i18n
+ * Requires Plugins: woocommerce
  * License: GPLv2
  * License URI: http://www.gnu.org/licenses/gpl-2.0.html
  */
@@ -32,7 +33,7 @@ add_action( 'before_woocommerce_init', function() {
 
 require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-define ( 'LIQPAY_VERSION', '1.0.11' );
+define ( 'LIQPAY_VERSION', '1.0.12' );
 define( 'LIQPAY_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'LIQPAY_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'LIQPAY_PLUGIN_FILE_NAME', basename( __FILE__ ) );
@@ -67,6 +68,9 @@ add_action( 'wp_enqueue_scripts', 'mrkv_liqpay_styles_and_scripts_front' );
 
 function mrkv_liqpay_styles_and_scripts()
 {
+    if ( ! class_exists( 'WooCommerce' ) ) {
+        return;
+    }
     $section = filter_input( INPUT_GET, 'section', FILTER_DEFAULT );
     
     $allowed_sections = array( 'morkva-liqpay' );
@@ -79,7 +83,7 @@ function mrkv_liqpay_styles_and_scripts()
 
 function mrkv_liqpay_styles_and_scripts_front()
 {
-    if ( is_checkout() ) 
+    if ( class_exists( 'WooCommerce' ) && function_exists( 'is_checkout' ) && is_checkout() ) 
     {
         wp_enqueue_style('front-mrkv-liqpay', LIQPAY_PLUGIN_URL . '/css/morkva-liqpay-front.css', array(), LIQPAY_VERSION);
     }
@@ -113,6 +117,11 @@ function mrkv_liqpay_true_load_plugin_textdomain()
  * */
 function mrkv_liqpay_extended_init_gateway_class()
 {
+    if ( ! class_exists( 'WC_Payment_Gateway' ) )
+    {
+        return;
+    }
+
     # Iclude Morkva Liqpay Gateway
     require_once(__DIR__ . '/includes/class-wc-gateway-morkva-liqpay.php');
 }
