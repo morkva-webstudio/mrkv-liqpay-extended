@@ -10,7 +10,7 @@
  * Author URI: https://morkva.co.ua
  * Text Domain: mrkv-liqpay-extended
  * WC requires at least: 5.4.0
- * WC tested up to: 9.8.0
+ * WC tested up to: 11.3
  * Domain Path: /i18n
  * Requires Plugins: woocommerce
  * License: GPLv2
