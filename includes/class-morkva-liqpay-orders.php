@@ -20,10 +20,8 @@ if (!class_exists('MRKV_LIQPAY_ORDERS'))
 			add_action('add_meta_boxes', array( $this, 'mrkv_liqpay_add_meta_boxes' ), 10, 2);
 
 			add_action( 'wp_ajax_mrkv_liqpay_cancel_payment_hold', array( $this, 'mrkv_liqpay_cancel_payment_hold_func' ) );
-			add_action( 'wp_ajax_nopriv_mrkv_liqpay_cancel_payment_hold', array( $this, 'mrkv_liqpay_cancel_payment_hold_func' ) );
 
 			add_action( 'wp_ajax_mrkv_liqpay_final_payment_hold', array( $this, 'mrkv_liqpay_final_payment_hold_func' ) );
-			add_action( 'wp_ajax_nopriv_mrkv_liqpay_final_payment_hold', array( $this, 'mrkv_liqpay_final_payment_hold_func' ) );
 
 			add_action('mrkv_liqpay_settings_sidebar', [$this, 'mrkv_liqpay_settings_sidebar_func']);
 			add_action('woocommerce_order_status_changed', [$this, 'mrkv_liqpay_finalize_hold'], 10, 4);
